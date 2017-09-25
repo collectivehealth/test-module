@@ -6,8 +6,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.mockito.Mockito;
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.google.inject.name.Names;
 
 /**
@@ -69,9 +72,12 @@ import com.google.inject.name.Names;
 
 public class TestModule extends AbstractModule {
 
+    private static final Logger LOG = Logger.getLogger(TestModule.class);
+
     private Collection<ClassInstancePair<?>> instances = new HashSet<>();
     private Collection<Class<?>> mockedClasses = new HashSet<>();
     private Collection<Class<?>> spiedClasses = new HashSet<>();
+    private Collection<Class<?>> skippedClasses = Collections.emptyList();
 
     /**
      * Bind a class to a specific instance for the test.
@@ -105,6 +111,16 @@ public class TestModule extends AbstractModule {
         return this;
     }
 
+    /*
+     * This is exclusively used for creating the internal injector in
+     * `spyClasses()`. It skips binding the default instances, which may cause
+     * Mockito to mock out an already mocked class.
+     */
+    protected TestModule withSkippedClasses(Collection<Class<?>> skippedClasses) {
+        this.skippedClasses = skippedClasses;
+        return this;
+    }
+
     @Override
     protected void configure() {
         bindInstances(instances);
@@ -118,6 +134,8 @@ public class TestModule extends AbstractModule {
                 .filter(i -> !StringUtils.isBlank(i.name) || (!mockedClasses.contains(i.c) && !spiedClasses.contains(i.c)))
                 // Skip already binded instances
                 .filter(i -> !instances.contains(i))
+                // Skip classes that we do not want to mock
+                .filter(i -> !skippedClasses.contains(i.c))
                 .collect(Collectors.toList());
         bindInstances(defaultInstances);
 
@@ -147,13 +165,38 @@ public class TestModule extends AbstractModule {
     }
 
     private void spyClasses(Collection<Class<?>> spiedClasses) {
+        if (spiedClasses.isEmpty()) {
+            // To avoid unnecessary, expensive injector creation.
+            return;
+        }
+
+        Injector injector = null;
+        try {
+            /*
+             * This is the core trick to make everything work: to piggyback
+             * spied classes on top of existing dependencies.
+             * 
+             * This instantiation mechanism prevents support for inner,
+             * non-static TestModule subclasses. To make that work, we could
+             * require/assume the enclosing class has the default constructor,
+             * which I think is as much an ask as a separate file for the
+             * TestModule subclass.
+             */
+            injector = Guice.createInjector(this.getClass().newInstance()
+                    .withSkippedClasses(spiedClasses));
+        } catch (ReflectiveOperationException e) {
+            // This should not happen if configured properly.
+            LOG.fatal(e);
+            System.exit(1);
+        }
+
         for (Class<?> spiedClass : spiedClasses) {
-            spyClass(spiedClass);
+            spyClass(injector, spiedClass);
         }
     }
 
-    private <T> void spyClass(Class<T> c) {
-        bind(c).toInstance(Mockito.spy(c));
+    private <T> void spyClass(Injector injector, Class<T> c) {
+        bind(c).toInstance(Mockito.spy(injector.getInstance(c)));
     }
 
     /**

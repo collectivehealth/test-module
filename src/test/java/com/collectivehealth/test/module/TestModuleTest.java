@@ -3,6 +3,7 @@ package com.collectivehealth.test.module;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import com.collectivehealth.test.module.depedency.Constant;
@@ -223,6 +224,51 @@ public class TestModuleTest {
         // Check it is actually spied
         Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
         assertEquals(Constant.MOCKED_RETURN_VALUE_1, mock.getReturnValue());
+    }
+
+    /*
+     * Since `TestModule.spyClasses()` instantiates from its own class, it's
+     * worth checking for a few conditions.
+     */
+
+    @Test
+    public void testInlineTestModuleClass() {
+        Injector injector = Guice.createInjector(new TestModule().withSpiedClasses(TestClass.class));
+
+        TestClass mock = injector.getInstance(TestClass.class);
+        // Default spied behavior
+        assertEquals(Constant.DEFAULT_RETURN_VALUE, mock.getReturnValue());
+
+        // Check it is actually spied
+        Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
+        assertEquals(Constant.MOCKED_RETURN_VALUE_1, mock.getReturnValue());
+    }
+
+    public static class NestedStaticTestModule extends TestModule {
+    }
+
+    @Test
+    public void testNestedStaticTestModuleClass() {
+        Injector injector = Guice.createInjector(new NestedStaticTestModule().withSpiedClasses(TestClass.class));
+
+        TestClass mock = injector.getInstance(TestClass.class);
+        // Default spied behavior
+        assertEquals(Constant.DEFAULT_RETURN_VALUE, mock.getReturnValue());
+
+        // Check it is actually spied
+        Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
+        assertEquals(Constant.MOCKED_RETURN_VALUE_1, mock.getReturnValue());
+    }
+
+    private class NestedTestModule extends TestModule {
+    }
+
+    @Test
+    @Ignore
+    // Nested TestModule subclass is not supported due to the difficulty in
+    // instantiating them inside the the `TestModule.spyClasses()` method.
+    public void testNestedTestModuleClass() {
+        Guice.createInjector(new NestedTestModule().withSpiedClasses(TestClass.class));
     }
 
 }
