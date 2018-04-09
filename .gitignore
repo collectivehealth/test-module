@@ -4,3 +4,15 @@
 /.settings/
 **/sample/
 
+
+.idea/libraries/target.xml
+
+.idea/workspace.xml
+
+.idea/misc.xml
+
+.idea/modules.xml
+
+src/test/test.iml
+
+src/main/main.iml

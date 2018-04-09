@@ -157,6 +157,20 @@ public class TestModule extends AbstractModule {
     }
 
     /**
+     * Helper method to reduce redundant class reference.
+     */
+    protected <T> ClassInstancePair<T> createClassMockPair(Class<T> c) {
+        return new ClassInstancePair<>(c, Mockito.mock(c));
+    }
+
+    /**
+     * Helper method to reduce redundant class reference.
+     */
+    protected <T> ClassInstancePair<T> createClassSpyPair(Class<T> c) {
+        return new ClassInstancePair<>(c, Mockito.spy(c));
+    }
+
+    /**
      * Override to perform additional configuration.
      */
     protected void additionalSetup() {
