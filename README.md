@@ -1,5 +1,7 @@
 # TestModule
 
+**License:** MIT
+
 TestModule is a means to a seamless integration between [Mockito](http://site.mockito.org) and [Guice](https://github.com/google/guice). Instead of having a bunch of setters, or specialized module classes for different tests, TestModule offers a one-solution-for-all, readable configuration that let you easily mock, spy, or inject any class/instance.
 
     new TestModule()
