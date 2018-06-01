@@ -16,3 +16,5 @@
 src/test/test.iml
 
 src/main/main.iml
+
+codecov_report.sh
