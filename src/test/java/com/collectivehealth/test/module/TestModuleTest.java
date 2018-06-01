@@ -3,10 +3,11 @@ package com.collectivehealth.test.module;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import java.util.Arrays;
+import java.util.Collection;
 import org.junit.Test;
 import org.mockito.Mockito;
 import com.collectivehealth.test.module.depedency.Constant;
-import com.collectivehealth.test.module.depedency.ExtendedTestModule;
 import com.collectivehealth.test.module.depedency.ExtendedWithMockedDefaultTestModule;
 import com.collectivehealth.test.module.depedency.ExtendedWithMockedNamedDefaultTestModule;
 import com.collectivehealth.test.module.depedency.TestClass;
@@ -37,7 +38,7 @@ public class TestModuleTest {
 
     @Test
     public void testDoNothing() {
-        Injector injector = Guice.createInjector(new ExtendedTestModule());
+        Injector injector = Guice.createInjector(new TestModule());
 
         // Guice's default behavior should kick in, and return a
         // default-constructed TestClass instance.
@@ -49,7 +50,7 @@ public class TestModuleTest {
         TestClass mock = Mockito.mock(TestClass.class);
         Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
 
-        Injector injector = Guice.createInjector(new ExtendedTestModule().withInstance(TestClass.class, mock));
+        Injector injector = Guice.createInjector(new TestModule().withInstance(TestClass.class, mock));
 
         assertEquals(Constant.MOCKED_RETURN_VALUE_1, injector.getInstance(TestClass.class).getReturnValue());
         try {
@@ -66,7 +67,7 @@ public class TestModuleTest {
         TestClass mock = Mockito.mock(TestClass.class);
         Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
 
-        Injector injector = Guice.createInjector(new ExtendedTestModule().withInstance(TestClass.class, Constant.ANNOTATED_NAME, mock));
+        Injector injector = Guice.createInjector(new TestModule().withInstance(TestClass.class, Constant.ANNOTATED_NAME, mock));
 
         assertEquals(Constant.DEFAULT_RETURN_VALUE, injector.getInstance(TestClass.class).getReturnValue());
         assertEquals(Constant.MOCKED_RETURN_VALUE_1, injector.getInstance(Key.get(TestClass.class, Names.named(Constant.ANNOTATED_NAME))).getReturnValue());
@@ -74,7 +75,7 @@ public class TestModuleTest {
 
     @Test
     public void testMockClass() {
-        Injector injector = Guice.createInjector(new ExtendedTestModule().withMockedClasses(TestClass.class));
+        Injector injector = Guice.createInjector(new TestModule().withMockedClasses(TestClass.class));
 
         TestClass mock = injector.getInstance(TestClass.class);
         // Default mocked behavior
@@ -87,7 +88,47 @@ public class TestModuleTest {
 
     @Test
     public void testSpyClass() {
-        Injector injector = Guice.createInjector(new ExtendedTestModule().withSpiedClasses(TestClass.class));
+        Injector injector = Guice.createInjector(new TestModule().withSpiedClasses(TestClass.class));
+
+        TestClass mock = injector.getInstance(TestClass.class);
+        // Default spied behavior
+        assertEquals(Constant.DEFAULT_RETURN_VALUE, mock.getReturnValue());
+
+        // Check it is actually spied
+        Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
+        assertEquals(Constant.MOCKED_RETURN_VALUE_1, mock.getReturnValue());
+    }
+
+    @Test
+    public void testCreateMockPair() {
+        Injector injector = Guice.createInjector(new TestModule() {
+
+            @Override
+            protected Collection<ClassInstancePair<?>> getDefaultInstances() {
+                return Arrays.asList(createClassMockPair(TestClass.class));
+            }
+
+        });
+
+        TestClass mock = injector.getInstance(TestClass.class);
+        // Default mocked behavior
+        assertNull(mock.getReturnValue());
+
+        // Check it is actually mocked
+        Mockito.when(mock.getReturnValue()).thenReturn(Constant.MOCKED_RETURN_VALUE_1);
+        assertEquals(Constant.MOCKED_RETURN_VALUE_1, mock.getReturnValue());
+    }
+
+    @Test
+    public void testCreateSpyPair() {
+        Injector injector = Guice.createInjector(new TestModule() {
+
+            @Override
+            protected Collection<ClassInstancePair<?>> getDefaultInstances() {
+                return Arrays.asList(createClassSpyPair(TestClass.class));
+            }
+
+        });
 
         TestClass mock = injector.getInstance(TestClass.class);
         // Default spied behavior

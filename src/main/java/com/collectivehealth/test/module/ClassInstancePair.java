@@ -47,11 +47,7 @@ public class ClassInstancePair<T> {
         @SuppressWarnings("rawtypes")
         ClassInstancePair other = (ClassInstancePair) obj;
 
-        if (c == null) {
-            if (other.c != null) {
-                return false;
-            }
-        } else if (!c.equals(other.c)) {
+        if (!c.equals(other.c)) {
             return false;
         }
         if (name == null) {
