@@ -1,9 +1,10 @@
 package com.collectivehealth.test.module;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import com.collectivehealth.test.module.ClassInstancePair;
 
 public class ClassInstancePairTest {
 
@@ -16,6 +17,10 @@ public class ClassInstancePairTest {
         ClassInstancePair<String> stringNamedPair3 = new ClassInstancePair<>(String.class, "Name2", "Hello World");
         ClassInstancePair<String> string5Pair = new ClassInstancePair<>(String.class, "5");
         ClassInstancePair<Integer> integer5Pair = new ClassInstancePair<>(Integer.class, 5);
+
+        assertTrue(stringPair1.equals(stringPair1));
+        assertFalse(stringPair1.equals(null));
+        assertFalse(stringPair1.equals("Test"));
 
         assertEquals(stringPair1, stringPair2);
         assertNotEquals(stringPair1, stringNamedPair1);
